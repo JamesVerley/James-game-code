@@ -1,0 +1,127 @@
+// James verley
+// robust sprite class for spritesheet animations in monogame
+
+    using System;
+    using System.Collections.Generic;
+    using Microsoft.Xna.Framework;
+    using Microsoft.Xna.Framework.Content;
+    using Microsoft.Xna.Framework.Graphics;
+    using Microsoft.Xna.Framework.Input;
+    using Microsoft.Xna.Framework.Audio;
+    using System.IO;
+
+
+    public class Sprite
+    {
+        // global variables (declare elsewhere)
+        float zoom = 1;
+        float timer = 0;
+        
+        
+        int frameWidth;
+        int frameHeight;
+
+        Vector2 raw_imageOrigin;
+
+        public Vector2 imageOrigin
+        {
+            get
+            {
+                return raw_imageOrigin * zoom;
+            }
+
+            set
+            {
+                raw_imageOrigin = value;
+            }
+        }
+
+        public int currentSequence; // which row of the spritesheet is currently being displayed
+
+        public int stopFrame; // which frame to display when animation is stopped
+
+        public int lastFrame; // the frame displayed when last paused
+
+        public int[] frameSequence; // order of frames to display during animation
+
+        public int timingOffset;
+
+        public int frameDuration; // duration in frames
+
+        public bool paused = true;
+
+        public Texture2D spriteSheet;
+
+        public Rectangle SourceRect {
+            get
+            {
+                if (paused)
+                {
+                    return new Rectangle(lastFrame * frameWidth, currentSequence * frameHeight, frameWidth, frameHeight);
+                }
+                else
+                {
+                    return new Rectangle(frameSequence[((timer - timingOffset) / frameDuration) % frameSequence.Length] * frameWidth, currentSequence * frameHeight, frameWidth, frameHeight);
+                }
+            }
+        }
+
+        public Rectangle DestRect (Vector2 Position)
+        {
+            return new Rectangle((int)(Position.X - imageOrigin.X), (int)(Position.Y - imageOrigin.Y), (int)(zoom * frameWidth), (int)(zoom * frameHeight));
+        }
+
+        public Rectangle DestRect(Point Position)
+        {
+            return new Rectangle((int)(Position.X - imageOrigin.X), (int)(Position.Y - imageOrigin.Y), (int)(zoom * frameWidth), (int)(zoom * frameHeight));
+        }
+
+        public Rectangle DestRect(int X, int Y)
+        {
+            return new Rectangle((int)(X - imageOrigin.X * zoom), (int)(Y - imageOrigin.Y * zoom), (int)(zoom * frameWidth), (int)(zoom * frameHeight));
+        }
+
+        public void StopAnimation()
+        {
+            paused = true;
+            lastFrame = stopFrame;
+        }
+
+        public void PauseAnimation()
+        {
+            if (!paused)
+            {
+                paused = true;
+                lastFrame = ((timer - timingOffset) / frameDuration) % frameSequence.Length;
+            }
+        }
+
+        public void PlayAnimation()
+        {
+            if (paused)
+            {
+                paused = false;
+                timingOffset = (timer % frameSequence.Length - lastFrame) * frameDuration;
+            }
+        }
+
+        public Sprite(Texture2D SpriteSheet, int FrameWidth, int FrameHeight, int[] FrameSequence = null, int FrameDuration = 10, int StopFrame = 0)
+        {
+            spriteSheet = SpriteSheet;
+
+            frameSequence = FrameSequence;
+
+            frameWidth = FrameWidth;
+            frameHeight = FrameHeight;
+
+            imageOrigin = new Vector2(frameWidth / 2, frameHeight / 2);
+
+            if (FrameSequence == null)
+            {
+                frameSequence = new int[] {0};
+            }
+
+            frameDuration = FrameDuration;
+            stopFrame = StopFrame;
+        }
+    }
